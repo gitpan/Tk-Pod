@@ -210,6 +210,7 @@ EOF
 # start with an upper case char. (xxx: Better solution
 # when perlindex gives more infos.
 
+# XXX Note that split_path is also used in Search_db.pm
 sub split_path {
     my($path, $max_length) = @_;
 

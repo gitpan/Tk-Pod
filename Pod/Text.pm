@@ -26,7 +26,7 @@ use Tk::Pod::Util qw(is_in_path is_interactive detect_window_manager start_brows
 use vars qw($VERSION @ISA @POD $IDX
 	    @tempfiles @gv_pids $terminal_fallback_warn_shown);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.22 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 5.26 $ =~ /(\d+)\.(\d+)/);
 
 @ISA = qw(Tk::Frame Tk::Pod::SimpleBridge Tk::Pod::Cache);
 
@@ -340,16 +340,21 @@ sub edit
 sub edit_get_linenumber
 {
  my($w) = @_;
- my $linenumber;
+ my $linenumber = $w->get_linenumber;
+ $w->edit(undef, $linenumber);
+}
+
+sub get_linenumber
+{
+ my($w) = @_;
  for my $tag ($w->tagNames('@' . ($w->{MenuX} - $w->rootx) . ',' . ($w->{MenuY} - $w->rooty)))
   {
    if ($tag =~ m{start_line_(\d+)})
     {
-     $linenumber = $1;
-     last;
+     return $1;
     }
   }
- $w->edit(undef, $linenumber);
+ undef;
 }
 
 sub view_source
@@ -364,6 +369,11 @@ sub view_source
 			 -scrollbars => $Tk::platform eq 'MSWin32' ? 'e' : 'w',
 			)->pack(-fill => "both", -expand => 1);
  $more->Load($w->_get_editable_path);
+ my $linenumber = $w->get_linenumber;
+ if (defined $linenumber)
+  {
+   $more->see($linenumber.'.'.0);
+  }
  $more->AddQuitBindings;
  $more->focus;
 }
@@ -627,7 +637,6 @@ sub Link
 
  if ($sec ne '')
   {
-   DEBUG and warn "Looking for section \"$sec\"...\n";
 
    my $highlight_match = sub
     {
@@ -641,7 +650,7 @@ sub Link
      $w->after(500, [$w, qw/tag remove _section_mark 0.0 end/]);
     };
 
-   DEBUG and warn "Trying a search across Sections entries...\n";
+   DEBUG and warn "Looking for section \"$sec\" across Sections entries...\n";
 
    foreach my $s ( @{$w->{'sections'} || []} )
     {
@@ -666,6 +675,7 @@ sub Link
     {
      DEBUG and warn " Found at $start\n";
      $highlight_match->($start);
+     return;
     }
    else
     {
@@ -678,6 +688,19 @@ sub Link
     {
      DEBUG and warn " Found at $start\n";
      $highlight_match->($start);
+     return;
+    }
+   else
+    {
+     DEBUG and warn " Again not found.  Using an exact search at line beginnings...\n";
+     $start = $w->search(qw/-regexp -nocase --/, qr{^\s*\Q$sec}, '1.0');
+    }
+
+   if (defined $start) 
+    {
+     DEBUG and warn " Found at $start\n";
+     $highlight_match->($start);
+     return;
     }
    else
     {
@@ -689,6 +712,7 @@ sub Link
     {
      DEBUG and warn " Found at $start\n";
      $highlight_match->($start);
+     return;
     }
    else
     {
@@ -859,6 +883,44 @@ sub SearchFullText {
 			},
 			-currentpath => $current_path,
 		       )->pack(-fill=>'both',-expand=>'both');
+	# XXX A very rough solution:
+	$IDX->Button(-text => "Rebuild search index",
+		     -command => sub {
+		      my $pw_bg_msg = "The next dialog will ask for the root password. The search index building will happen in background.";
+		      if (!is_in_path("gksu"))
+		       {
+			if (!is_in_path("xsu"))
+			 {
+			  $w->_error_dialog("gksu or xsu needed to start perlindex");
+			  return;
+			 }
+			$w->_warn_dialog($pw_bg_msg);
+			if (fork == 0)
+		         {
+			  system('xsu',
+				 '--command', 'perlindex -index',
+				 '--username', 'root',
+				 '--title' => 'Rebuild search index',
+				 '--set-display' => $w->screen,
+				);
+			  CORE::exit(0);
+			 }
+		       }
+		      else
+		       {
+			$w->_warn_dialog($pw_bg_msg);
+			if (fork == 0)
+			 {
+			  system('gksu',
+				 '--user', 'root',
+				 #'--description', 'Rebuild search index',
+				 'perlindex -index',
+				);
+			  CORE::exit(0);
+			 }
+		       }
+		     }
+		    )->pack(-fill => 'x');
 	$IDX->Button(-text => "Close",
 		     -command => sub { $IDX->destroy },
 		    )->pack(-fill => 'x');
@@ -1452,6 +1514,13 @@ Pod with umlaut: L<ExtUtils::MakeMaker>.
 Details:  L<perlpod> or perl, perlfunc.
 
 External links: L<http://www.cpan.org> (URL), L<perl(1)> (man page).
+
+Links to local sections: L<a section (SYNOPSIS)|/SYNOPSIS>, L<an item
+(-file, currently wrong)|/-file>, L<a working item (auml)|/auml>.
+
+Links to external sections: L<a section (DESCRIPTION in
+perl.pod)|perl/DESCRIPTION>, L<an item (Uncuddled elses in
+perlstyle.pod)|perlstyle/Uncuddled elses>.
 
 Here some code in a as is paragraph
 

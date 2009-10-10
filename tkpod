@@ -3,7 +3,7 @@
 use strict;
 use vars qw($VERSION $tk_opt $tree $server $portfile $Mblib @I $debug);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.7 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 5.9 $ =~ /(\d+)\.(\d+)/);
 
 use IO::Socket;
 
@@ -110,11 +110,20 @@ if (!GetOptions("tk"           => \$tk_opt,
 		    eval qq{ use $mod qw(as_default) };
 		    die $@ if $@;
 		},
+		"version"      => sub {
+		    print <<EOF;
+tkpod $VERSION
+Tk::Pod $Tk::Pod::VERSION
+part of Tk-Pod-$Tk::Pod::DIST_VERSION
+EOF
+		    CORE::exit(0);
+		},
 	       )) {
     die <<EOT;
 Usage:	$0  [-tk] [[-no]tree] [-Mblib] [-I dir] [-d|debug] [-s|server]
 	    [-filedialog module]
             [-f function | -q FAQRegex | directory | name [...]]
+        $0  -version
 
 EOT
 }

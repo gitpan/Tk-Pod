@@ -134,7 +134,12 @@ sub searchWords {
     my @results;
     for my $did (sort {	$termhits{$b} <=> $termhits{$a} || $score{$b} <=> $score{$a} } keys %score) {
 	my ($mtf, $path) = unpack($p.'a*', $FN->{$did});
-	next if ($restrict_pod && $path !~ /$restrict_pod/);
+	# XXX Should not use Tk::Pod::Search::split_path, or split_path should be moved to another package
+	if ($restrict_pod) {
+	    my($check_path) = Tk::Pod::Search::split_path($path);
+	    next if $check_path !~ /^$restrict_pod/;
+	}
+	#next if ($restrict_pod && $path !~ /$restrict_pod/);
 	$path = File::Spec->catfile($self->prefix, $path) unless $^O eq 'MSWin32'; # This seems to be a perlindex bug in MSWin32
 	push @results, { termhits => $termhits{$did}, score => $score{$did}, path => $path };
 	last unless --$maxhits;
