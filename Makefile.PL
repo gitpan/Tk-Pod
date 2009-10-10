@@ -2,13 +2,13 @@
 
 use ExtUtils::MakeMaker;
 
-$DIST_VERSION = "0.9939_55";
+$DIST_VERSION = "0.9939_56";
 $is_devel_host = defined $ENV{USER} && $ENV{USER} eq 'eserte' && $^O =~ /bsd/i && -f "../../perl.release.mk";
 if ($is_devel_host) {
     open(P, "Pod.pm") or die "Can't open Pod.pm: $!";
  SEARCH_FOR_DIST_VERSION: {
 	while(<P>) {
-	    if (/DIST_VERSION\s*=\s*\"(.*)\"/) {
+	    if (/DIST_VERSION\s*=\s*["'](.*)["']/) {
 		if ($DIST_VERSION ne $1) {
 		    die "Please adjust DIST_VERSION in Makefile.PL";
 		}
@@ -52,7 +52,6 @@ if ($] < 5.009003) {
 **********************************************************************
 * Warnings looking like
 *    Unknown escape E<0x107>
-*    Unknown command paragraph "=encoding iso-8859-2"
 * are expected and may be ignored.
 **********************************************************************
 EOF

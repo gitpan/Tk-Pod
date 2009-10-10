@@ -18,7 +18,7 @@ package Tk::Pod::Search_db;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.7 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 5.8 $ =~ /(\d+)\.(\d+)/);
 
 use Carp;
 use Fcntl;
@@ -156,8 +156,6 @@ sub prefix {
 1;
 __END__
 
-=encoding iso-8859-2
-
 =head1 NAME
 
 Tk::Pod::Search_db - dirty OO wrapper for C<perlindex>'s search functionality
@@ -230,7 +228,7 @@ Achim Bohnet  <F<ach@mpe.mpg.de>>
 Most of the code here is borrowed from L<perlindex> written by
 Ulrich Pfeifer <F<Ulrich.Pfeifer@de.uu.net>>.
 
-Current maintainer is Slaven Reziæ <F<slaven@rezic.de>>.
+Current maintainer is Slaven ReziE<0x0107> <F<slaven@rezic.de>>.
 
 Copyright (c) 1997-1998 Achim Bohnet. All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same
