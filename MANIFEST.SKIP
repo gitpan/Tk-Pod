@@ -2,9 +2,8 @@
 \bRCS\b
 \bCVS\b
 \bChangeLog\b
-^MANIFEST\.
+^MANIFEST\.bak
 \bMakefile$
-^Makefile.PL$
 ~$
 ^Attic/
 \.gdbinit$
@@ -18,6 +17,7 @@
 patch\.gz$
 ^pm_to_blib$
 \.ppd$
+^\.prove$
 # private common files
 \.ok2cgi$
 \.copynewer.SKIP$
