@@ -1,10 +1,9 @@
 # -*- perl -*-
 
 #
-# $Id: FindPods.pm,v 5.13 2009/10/10 14:10:28 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2001,2003,2004,2005,2007,2009 Slaven Rezic. All rights reserved.
+# Copyright (C) 2001,2003,2004,2005,2007,2009,2012 Slaven Rezic. All rights reserved.
 # This package is free software; you can redistribute it and/or modify
 # it under the same terms as Perl itself.
 #
@@ -36,7 +35,7 @@ use vars qw($VERSION @EXPORT_OK $init_done %arch $arch_re);
 
 @EXPORT_OK = qw/%pods $has_cache pod_find/;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.13 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '5.15';
 
 BEGIN {  # Make a DEBUG constant very first thing...
   if(defined &DEBUG) {
@@ -478,7 +477,7 @@ sub WriteCache {
 
     my $cache_dir = dirname _cache_file();
     if (!-d $cache_dir) {
-	mkdir $cache_dir
+	mkdir $cache_dir, 0777
 	    or do {
 		warn "Can't create cache directory $cache_dir: $!";
 		return;

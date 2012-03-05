@@ -4,7 +4,7 @@
 package
     AnyDBM_File; # hide from indexer
 use vars '@ISA';
-my @try = qw(DB_File GDBM_File SDBM_File ODBM_File NDBM_File) unless @ISA;
+my @try; @try = qw(DB_File GDBM_File SDBM_File ODBM_File NDBM_File) unless @ISA;
 my $mod;
 for $mod (@try) {
     if (eval "require $mod") {
@@ -18,7 +18,7 @@ package Tk::Pod::Search_db;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.8 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '5.09';
 
 use Carp;
 use Fcntl;
