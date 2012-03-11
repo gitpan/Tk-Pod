@@ -83,11 +83,11 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "repository" : {
          "url" : "git://github.com/eserte/tk-pod.git"
       }
    },
-   "version" : "0.9939_59"
+   "version" : "0.9940"
 }

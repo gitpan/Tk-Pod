@@ -43,4 +43,4 @@ requires:
   Tk: 800.004
 resources:
   repository: git://github.com/eserte/tk-pod.git
-version: 0.9939_59
+version: 0.9940
