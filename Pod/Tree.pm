@@ -53,7 +53,7 @@ in a tree.
 
 use strict;
 use vars qw($VERSION @ISA @POD %EXTRAPODDIR $ExtraFindPods);
-$VERSION = '5.09';
+$VERSION = '5.10';
 
 use base 'Tk::Tree';
 
@@ -245,6 +245,8 @@ sub Populate {
 					  -foreground => '#606060',
 					  -selectforeground => '#606060',
 					 );
+    $w->{Style}{'script'} = $w->{Style}{'site'};
+    $w->{Style}{'local dirs'} = $w->{Style}{'site'};
 
     my $m = $w->Menu(-tearoff => $Tk::platform ne 'MSWin32');
     eval { $w->menu($m) }; warn $@ if $@;
@@ -347,6 +349,7 @@ sub Fill {
 			      $w->_FillDone($pods, $args{'-fillcb'});
 			      $w->fileevent($rdr, 'readable', '');
 			      $w->Subwidget('UpdateLabel')->placeForget;
+			      require POSIX; waitpid $w->{FillPid}, &POSIX::WNOHANG; # zombie reaping
 			      $w->{FillPid} = undef;
 			  });
 	    return;
@@ -410,7 +413,7 @@ sub _FillDone {
 	    (my $title = $pod) =~ s|/|::|g;
 	    $w->_add_parents($treepath);
 
-	    my $loc = Tk::Pod::FindPods::module_location($hash->{$pod});
+	    my $loc = $category =~ m{^(script|local dirs)$} ? $category : Tk::Pod::FindPods::module_location($hash->{$pod});
 	    my $is = $w->{Style}{$loc};
 	    my @entry_args = ($treepath,
 			      -text => $title,

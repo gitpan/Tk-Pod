@@ -35,7 +35,7 @@ use vars qw($VERSION @EXPORT_OK $init_done %arch $arch_re);
 
 @EXPORT_OK = qw/%pods $has_cache pod_find/;
 
-$VERSION = '5.15';
+$VERSION = '5.16';
 
 BEGIN {  # Make a DEBUG constant very first thing...
   if(defined &DEBUG) {
@@ -152,9 +152,17 @@ sub pod_find {
 
     my $duplicate_warning_header_seen = 0;
 
+    # Assume $_ and $File::Find::name are set
+    my $ignore_directory = sub {
+	return 1 if m{^(RCS|CVS|\.svn|\.git|blib)$};
+    };
+
     my $wanted = sub {
 	if (-d) {
-	    if ($seen_dir{$File::Find::name}) {
+	    if ($ignore_directory->()) {
+		$File::Find::prune = 1;
+		return;
+	    } elsif ($seen_dir{$File::Find::name}) {
 		$File::Find::prune = 1;
 		return;
 	    } else {
@@ -200,7 +208,10 @@ sub pod_find {
 
     my $wanted_scripts = sub {
 	if (-d) {
-	    if ($seen_dir{$File::Find::name}) {
+	    if ($ignore_directory->()) {
+		$File::Find::prune = 1;
+		return;
+	    } elsif ($seen_dir{$File::Find::name}) {
 		$File::Find::prune = 1;
 		return;
 	    } else {

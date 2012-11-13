@@ -4,7 +4,7 @@
       "Slaven Rezic <srezic@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.120530",
+   "generated_by" : "ExtUtils::MakeMaker version 6.6302, CPAN::Meta::Converter version 2.120630",
    "license" : [
       "perl_5"
    ],
@@ -21,12 +21,23 @@
    },
    "optional_features" : {
       "debugging" : {
-         "description" : "Debugging helper",
+         "description" : "Debugging and development helper",
          "prereqs" : {
             "runtime" : {
                "requires" : {
+                  "Devel::Hide" : "0",
                   "Module::Refresh" : "0",
                   "Tk::WidgetDump" : "0"
+               }
+            }
+         }
+      },
+      "external_links" : {
+         "description" : "support for links using an external browser",
+         "prereqs" : {
+            "runtime" : {
+               "requires" : {
+                  "URI::Escape" : "0"
                }
             }
          }
@@ -83,11 +94,11 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "repository" : {
          "url" : "git://github.com/eserte/tk-pod.git"
       }
    },
-   "version" : "0.9940"
+   "version" : "0.9940_50"
 }

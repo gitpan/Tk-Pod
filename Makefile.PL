@@ -2,7 +2,7 @@
 
 use ExtUtils::MakeMaker;
 
-$DIST_VERSION = "0.9940";
+$DIST_VERSION = "0.9940_50";
 $is_devel_host = defined $ENV{USER} && $ENV{USER} eq 'eserte' && $^O =~ /bsd/i && -f "../../perl.release.mk";
 $min_eumm_version = 6.58;
 $eumm_recent_enough = $ExtUtils::MakeMaker::VERSION >= $min_eumm_version;
@@ -96,16 +96,23 @@ WriteMakefile(
 		},
 	      },
 	      debugging => {
-		description => "Debugging helper",
+		description => "Debugging and development helper",
 		requires => {
 		  'Tk::WidgetDump' => 0,
 		  'Module::Refresh' => 0,
+		  'Devel::Hide' => 0,
 		},
 	      },
 	      gzip_support => {
 	        description => "gzip support in tkmore",
 		requires => {
 		  'PerlIO::gzip' => 0,
+		},
+	      },
+	      external_links => {
+	        description => "support for links using an external browser",
+		requires => {
+		  'URI::Escape' => 0,
 		},
 	      },
 	    },

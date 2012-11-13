@@ -26,7 +26,7 @@ use Tk::Pod::Util qw(is_in_path is_interactive detect_window_manager start_brows
 use vars qw($VERSION @ISA @POD $IDX
 	    @tempfiles @gv_pids $terminal_fallback_warn_shown);
 
-$VERSION = '5.30';
+$VERSION = '5.31';
 
 @ISA = qw(Tk::Frame Tk::Pod::SimpleBridge Tk::Pod::Cache);
 
@@ -45,23 +45,45 @@ BEGIN {
   DEBUG and warn "POD: @POD\n";
 };
 
-use Class::Struct;
-struct '_HistoryEntry' => [
-    'file'  => '$',
-    'text'  => '$',
-    'index' => '$',
-];
-sub _HistoryEntry::create {
-    my $o = shift->new;
-    my($what, $index) = @_;
-    if (ref $what eq 'HASH') {
-	$o->file($what->{file});
-	$o->text($what->{text});
-    } else {
-	$o->file($what);
+{
+    package # hide from CPAN indexer
+	Tk::Pod::Text::_HistoryEntry;
+
+    use File::Basename qw(basename);
+
+    for my $member (qw(file text index pod_title)) {
+	my $sub = sub {
+	    my $self = shift;
+	    if (@_) {
+		$self->{$member} = $_[0];
+	    }
+	    $self->{$member};
+	};
+	no strict 'refs';
+	*{$member} = $sub;
     }
-    $o->index($index);
-    $o;
+
+    sub create {
+	my($class,$what,$index) = @_;
+	my $o = bless {}, $class;
+	if (ref $what eq 'HASH') {
+	    $o->file($what->{file});
+	    $o->text($what->{text});
+	} else {
+	    $o->file($what);
+	}
+	$o->index($index);
+	$o;
+    }
+
+    sub get_label {
+	my $self = shift;
+	my $pod_title = $self->pod_title;
+	return $pod_title if defined $pod_title;
+	my $file = $self->file;
+	return basename $file if defined $file;
+	return "<Untitled document>";
+    }
 }
 
 use constant HISTORY_DIALOG_ARGS => [-icon => 'info',
@@ -149,10 +171,11 @@ sub file {   # main entry point
       my $file = shift;
       $w->_remember_old;
       eval {
+	  my $calling_from_history = $w->privateData()->{'from_history'};
 	  $w->{'File'} = $file;
 	  $w->{'Text'} = undef;
 	  my $path = $w->findpod($file);
-	  if (!$w->privateData()->{'from_history'}) {
+	  if (!$calling_from_history) {
 	      $w->history_modify_entry;
 	      $w->history_add({file => $path}, "1.0");
 	  }
@@ -170,6 +193,9 @@ sub file {   # main entry point
 	  if (!$w->get_from_cache) {
 	      $w->process($path);
 	      $w->add_to_cache; # XXX pass time for processing?
+	      if (!$calling_from_history) {
+		  $w->history_modify_current_title; # now the pod_title is known
+	      }
 	  }
 	  if (defined $t) {
 	      print Benchmark::timediff(Benchmark->new, $t)->timestr,"\n";
@@ -191,9 +217,10 @@ sub text {
       my $text = shift;
       $w->_remember_old;
       eval {
+	  my $calling_from_history = $w->privateData()->{'from_history'};
 	  $w->{'Text'} = $text;
 	  $w->{'File'} = undef;
-	  if (!$w->privateData()->{'from_history'}) {
+	  if (!$calling_from_history) {
 	      $w->history_modify_entry;
 	      $w->history_add({text => $text}, "1.0");
 	  }
@@ -213,6 +240,9 @@ sub text {
 	  # XXX title: the 2nd part of the hack
 	  my $title = $w->cget(-title);
 	  $w->process(\$text, $title);
+	  if (!$calling_from_history) {
+	      $w->history_modify_current_title; # now the pod_title is known
+	  }
 	  if (defined $t) {
 	      print Benchmark::timediff(Benchmark->new, $t)->timestr,"\n";
 	  }
@@ -250,7 +280,7 @@ sub _get_editable_path
    my $text = $w->cget("-text");
    $w->_need_File_Temp;
    my($fh,$fname) = File::Temp::tempfile(UNLINK => 1,
-					 SUFFIX => ".pod");
+					 SUFFIX => "_tkpod.pod");
    print $fh $text;
    close $fh;
    $path = $fname;
@@ -905,6 +935,17 @@ sub SearchFullText {
 	# XXX A very rough solution:
 	$IDX->Button(-text => "Rebuild search index",
 		     -command => sub {
+		      my $installscriptdir = $Config{'installscript'};
+		      my $perlindex = 'perlindex';
+		      if (-d $installscriptdir)
+		       {
+			$perlindex = "$installscriptdir/perlindex";
+			if (!-f $perlindex)
+			 {
+			  $w->_error_dialog("perlindex was expected in the path '$perlindex', but not found. Cannot build search index.");
+			  return;
+			 }
+		       }
 		      my $pw_bg_msg = "The next dialog will ask for the root password. The search index building will happen in background.";
 		      if (!is_in_path("gksu"))
 		       {
@@ -917,7 +958,7 @@ sub SearchFullText {
 			if (fork == 0)
 		         {
 			  system('xsu',
-				 '--command', 'perlindex -index',
+				 '--command', "$perlindex -index",
 				 '--username', 'root',
 				 '--title' => 'Rebuild search index',
 				 '--set-display' => $w->screen,
@@ -933,7 +974,7 @@ sub SearchFullText {
 			  system('gksu',
 				 '--user', 'root',
 				 #'--description', 'Rebuild search index',
-				 'perlindex -index',
+				 "perlindex -index",
 				);
 			  CORE::exit(0);
 			 }
@@ -970,7 +1011,7 @@ sub Print {
 	$text = $w->cget("-text");
 	$w->_need_File_Temp;
 	my($fh,$fname) = File::Temp::tempfile(UNLINK => 1,
-					      SUFFIX => ".pod");
+					      SUFFIX => "_tkpod.pod");
 	print $fh $text;
 	close $fh;
 	$path = $fname;
@@ -1013,7 +1054,7 @@ sub _print_pod_unix {
 	if ($gv) {
 	    $w->_need_File_Temp;
 
-	    my($fh,$fname) = File::Temp::tempfile(SUFFIX => ".ps");
+	    my($fh,$fname) = File::Temp::tempfile(SUFFIX => "_tkpod.ps");
 	    system("$pod2ps_pipe > $fname");
 	    push @tempfiles, $fname;
 	    my $pid = fork;
@@ -1125,7 +1166,7 @@ sub history_add {
 	}
     }
     my $hist = $w->privateData()->{history};
-    my $hist_entry = _HistoryEntry->create($what, $index);
+    my $hist_entry = Tk::Pod::Text::_HistoryEntry->create($what, $index, $w->{pod_title});
     $hist->[++$w->privateData()->{history_index}] = $hist_entry;
     splice @$hist, $w->privateData()->{history_index}+1;
     $w->history_view_update;
@@ -1241,10 +1282,23 @@ sub history_set {
 sub history_modify_entry {
     my $w = shift;
     if ($w->privateData()->{'history_index'} >= 0) {
-	my $old_entry = _HistoryEntry->create({file => $w->cget('-path'),
-					       text => $w->cget('-text')
-					      }, $w->index('@0,0'));
-	$w->privateData()->{'history'}->[$w->privateData()->{'history_index'}] = $old_entry;
+	my $entry = $w->privateData()->{'history'}->[$w->privateData()->{'history_index'}];
+	$entry->index($w->index('@0,0'));
+    }
+}
+
+# Modify the pod title of the current history entry.
+sub history_modify_current_title {
+    my $w = shift;
+    my $pod_title = $w->{pod_title};
+    if (defined $pod_title) {
+	my $history_index = $w->privateData()->{'history_index'};
+	if ($history_index >= 0) {
+	    my $entry = $w->privateData()->{'history'}->[$history_index];
+	    $entry->pod_title($pod_title);
+	    $w->history_view_update;
+	    $w->history_view_select;
+	}
     }
 }
 
@@ -1287,8 +1341,7 @@ sub history_view_update {
 	my $lb = $t->Subwidget('Lb');
 	$lb->delete(0, "end");
 	foreach my $histentry (@{$w->privateData()->{'history'}}) {
-	    (my $basename = $histentry->file) =~ s|^.*/([^/]+)$|$1|;
-	    $lb->insert("end", $basename);
+	    $lb->insert("end", $histentry->get_label);
 	}
     }
 }
@@ -1346,8 +1399,15 @@ sub _warn_dialog {
     );
 }
 
-END {
+sub cleanup_tempfiles {
     if (@tempfiles) {
+	# first get rid of all possible zombies
+	# before we can check with kill 0 => ...
+	require POSIX;
+	if (defined &POSIX::WNOHANG) { # defined everywhere?
+	    while (waitpid(-1, &POSIX::WNOHANG) > 0) { }
+	}
+
 	my $gv_running;
 	for my $pid (@gv_pids) {
 	    if (kill 0 => $pid) {
@@ -1362,8 +1422,13 @@ END {
 	    for my $temp (@tempfiles) {
 		unlink $temp;
 	    }
+	    @tempfiles = ();
 	}
     }
+}
+
+END {
+    cleanup_tempfiles();
 }
 
 1;
@@ -1627,5 +1692,5 @@ terms as Perl itself.
 
 # Local Variables:
 # mode: cperl
-# cperl-indent-level: 1
+# cperl-indent-level: 4
 # End:
