@@ -5,7 +5,7 @@ use Tk::Toplevel;
 
 use vars qw($VERSION $DIST_VERSION @ISA);
 $VERSION = '5.39';
-$DIST_VERSION = '0.9940_50';
+$DIST_VERSION = '0.9941';
 
 @ISA = qw(Tk::Toplevel);
 
@@ -184,6 +184,17 @@ EOF
 	     $url = URI::Escape::uri_escape($url);
 	 };
 	 Tk::Pod::Util::start_browser("http://search.cpan.org/perldoc?" . $url);
+     },
+    ],
+    [Button => $compound->('Pod on ~metacpan.org'),
+     '-command' => sub {
+	 require Tk::Pod::Util;
+	 my $url = $p->{pod_title};
+	 eval {
+	     require URI::Escape;
+	     $url = URI::Escape::uri_escape($url);
+	 };
+	 Tk::Pod::Util::start_browser("https://metacpan.org/module/" . $url);
      },
     ],
     [Button => $compound->('Pod on ~annocpan.org'),

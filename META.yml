@@ -48,4 +48,4 @@ requires:
   Tk: 800.004
 resources:
   repository: git://github.com/eserte/tk-pod.git
-version: 0.9940_50
+version: 0.9941
