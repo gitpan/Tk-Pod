@@ -3,7 +3,7 @@ package Tk::More;
 use strict;
 use vars qw($VERSION @ISA);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 5.8 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '5.09';
 
 use Tk qw(Ev);
 use Tk::Derived;
@@ -219,11 +219,11 @@ sub LoadFH
    binmode $fh, ":encoding($encoding)";
   }
  $text->MainWindow->Busy;
- $text->SUPER::delete('1.0','end');
+ $text->delete('1.0','end');
  #yy delete $text->{UNDO};
  while (<$fh>)
   {
-   $text->SUPER::insert('end',$_);
+   $text->insert('end',$_);
   }
  #yy $text->{FILE} = $file;
  $text->markSet('insert', '@1,0');

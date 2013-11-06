@@ -12,10 +12,10 @@ use Tk::More;
 
 BEGIN {
     if (!eval q{
-	use Test;
+	use Test::More;
 	1;
     }) {
-	print "1..0 # skip tests only work with installed Test module\n";
+	print "1..0 # skip tests only work with installed Test::More module\n";
 	CORE::exit(0);
     }
 }
@@ -25,10 +25,14 @@ if (!$mw) {
     print "1..0 # cannot create MainWindow\n";
     CORE::exit(0);
 }
+$mw->geometry("+1+1"); # for twm
 
-plan tests => 2;
+plan tests => 4;
 
 {
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, @_ };
+
     my $more = $mw->Scrolled("More",
 			     -font => "Courier 10",
 			     -scrollbars => "osoe",
@@ -37,9 +41,14 @@ plan tests => 2;
     $more->Load($INC{"Tk/More.pm"});
     $more->update;
     ok(Tk::Exists($more));
+    ok(!@warnings, "No warnings while loading")
+	or diag($warnings[0] . "...");
 }
 
 {
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, @_ };
+
     my $more = $mw->More
 	(# -font: use default
 	 -width => 20,
@@ -48,6 +57,8 @@ plan tests => 2;
     $more->Load($0);
     $more->update;
     ok(Tk::Exists($more));
+    ok(!@warnings, "No warnings while loading")
+	or diag($warnings[0] . "...");
 }
 
 if (!$ENV{PERL_INTERACTIVE_TEST}) {
