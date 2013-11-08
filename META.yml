@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Tk-Pod
-version:            0.9941_50
+version:            0.9942
 abstract:           Pod browser widget for Tk
 author:
     - Slaven Rezic <srezic@cpan.org>
